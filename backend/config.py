@@ -20,7 +20,7 @@ LOG_DIR.mkdir(exist_ok=True) #creates a folder if it doesn't exist
 
 # ─── Ollama / LLM ─────────────────────────────────────────────────────────────
 OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") # where ollama server runs
-OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3") # which model to use
+OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:1b") # which model to use
 OLLAMA_EMBEDDING_MODEL: str = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text") # embedding model that is used, Converting text → embeddings (RAG), finds relevant data
 OLLAMA_TIMEOUT: int = int(os.getenv("OLLAMA_TIMEOUT", "60")) # Max time (seconds) to wait for response
 
