@@ -1,0 +1,10 @@
+{
+  "symptoms": [
+    {
+      "name": "fever",
+      "severity": "mild",
+      "duration": "2 days"
+    }
+  ],
+  "advice": "Stay hydrated and rest."
+}

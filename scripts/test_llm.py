@@ -7,21 +7,42 @@ MODEL = "llama3.2:1b"
 messages = [
     {
         "role": "system",
-        "content": 'You are a medical assistant. Always respond in valid JSON using exactly this format: {"symptoms": ["...", "..."], "advice": "..."}'
+        "content": """
+        Return STRICT JSON.
+
+        Format:
+        {
+            "symptoms": [
+                {
+                    "name": "symptom",
+                    "severity": "mild/moderate/severe/unknown",
+                    "duration": "duration/unknown"
+                }
+            ],
+            "advice": "text"
+        }
+
+        Rules:
+        - Extract ALL symptoms mentioned
+        - symptoms must be a JSON array of objects
+        - severity must be one of: mild, moderate, severe, unknown
+        - duration must be extracted if present, else "unknown"
+        - No extra text outside JSON
+        """
     },
     {
         "role": "user",
-        "content": "I have severe headache and cold for 2 days."
+        "content": "I have mild fever from 2 days."
     }
 ]
 
 payload = {
     "model": MODEL,
     "messages": messages,
-    "format": "json",
+    "format": "json",  
     "stream": False,
     "options": {
-        "temperature": 1.0
+        "temperature": 0
     }
 }
 
@@ -32,12 +53,15 @@ if response.status_code == 200:
     raw_content = data["message"]["content"]
     
     try:
-        # Parse the JSON and pretty print it so it doesn't get messed up in the terminal
         parsed_json = json.loads(raw_content)
-        print("Received valid JSON response:")
+        
         print(json.dumps(parsed_json, indent=2))
+        
+        with open("output.json", "w") as f:
+            json.dump(parsed_json, f, indent=2)
+            
     except json.JSONDecodeError:
-        print("Model did not return valid JSON. Raw output was:")
+        print("Invalid JSON from model:")
         print(repr(raw_content))
 else:
     print("Error:", response.text)
