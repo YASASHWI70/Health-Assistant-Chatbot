@@ -32,7 +32,8 @@ import json
 import re
 from typing import List, Optional
 
-from langchain_community.chat_models import ChatOllama
+
+from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from backend.config import OLLAMA_BASE_URL, OLLAMA_MODEL
@@ -50,27 +51,35 @@ class SymptomExtractionAgent:
     and fever for two days" into structured ExtractedSymptom objects.
     """
 
-    SYSTEM_PROMPT = """You are a medical NLP specialist. Your ONLY job is to extract symptoms 
-from patient text and return structured JSON. 
+    SYSTEM_PROMPT = """You are a medical NLP system.
 
-RULES:
-- Extract every symptom mentioned, even if vague
-- Infer severity from descriptors (e.g., "terrible" = severe, "mild" = mild)
-- Extract duration if mentioned
-- Extract body location if mentioned
-- List modifiers (e.g., "intermittent", "worsening", "with exertion", "at night")
-- Return ONLY valid JSON — no preamble, no explanation, no markdown
+    STRICT RULES:
+    - Return ONLY valid JSON array
+    - Extract ALL symptoms mentioned
+    - Each item MUST be an object
+    - NEVER return a list of strings
+    - NEVER return plain text
 
-Output format (strict JSON array):
-[
-  {
-    "name": "symptom name",
-    "severity": "mild | moderate | severe | null",
-    "duration": "timeframe or null",
-    "location": "body part or null",
-    "modifiers": ["list", "of", "modifiers"]
-  }
-]"""
+    Each item must follow:
+
+    {
+        "name": "symptom name",
+        "severity": "mild | moderate | severe | null",
+        "duration": "timeframe or null",
+        "location": "body part or null",
+        "modifiers": []
+    }
+
+    Example:
+    [
+        {
+            "name": "fever",
+            "severity": null,
+            "duration": "2 days",
+            "location": null,
+            "modifiers": []
+        }
+    ]"""
 
     def __init__(self):
         self.llm = ChatOllama(
@@ -108,11 +117,27 @@ Output format (strict JSON array):
 
             response = self.llm.invoke(messages)
             raw = response.content.strip()
-
+            print("\n🔍 RAW MODEL OUTPUT:\n", raw)
             # Strip markdown code blocks if present
             raw = re.sub(r"```json|```", "", raw).strip()
 
             symptoms_data = json.loads(raw)
+
+            # 🔥 FIX 1: Handle single object
+            if isinstance(symptoms_data, dict):
+                # If wrapped like {"symptoms": [...]}
+                for val in symptoms_data.values():
+                    # We only care if it's a list AND if there's actually a dictionary item inside it
+                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], dict):
+                        symptoms_data = val
+                        break
+                else:
+                    # If no valid symptom list found inside, assume the dict itself is the only symptom
+                    symptoms_data = [symptoms_data]
+
+            # 🔥 Handle case where model returns list of strings
+            if isinstance(symptoms_data, list) and all(isinstance(x, str) for x in symptoms_data):
+                symptoms_data = [{"name": x} for x in symptoms_data]
 
             symptoms = []
             for item in symptoms_data:
