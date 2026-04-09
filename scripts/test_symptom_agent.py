@@ -1,5 +1,5 @@
 from backend.agents.symptom_extraction_agent import SymptomExtractionAgent
 agent = SymptomExtractionAgent()
-symptoms = agent.extract("I've had a 38.5°C fever and a splitting headache for 2 days")
+symptoms = agent.extract("What is the difference between a raw OpenAI call and using LangChain?")
 for s in symptoms:
     print(s.name, s.severity, s.duration)
