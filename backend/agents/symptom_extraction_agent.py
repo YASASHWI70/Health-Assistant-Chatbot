@@ -13,10 +13,9 @@ import json
 import re
 from typing import List, Optional
 
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
-
-from backend.config import OPENAI_API_KEY, OPENAI_MODEL
+from backend.config import OLLAMA_MODEL, OLLAMA_BASE_URL, OLLAMA_TIMEOUT
 from backend.utils.models import ExtractedSymptom
 from backend.utils.logger import get_logger
 
@@ -54,10 +53,11 @@ Output format (strict JSON array):
 ]"""
 
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=OPENAI_MODEL,
+        self.llm = ChatOllama(
+            model=OLLAMA_MODEL,
+            base_url=OLLAMA_BASE_URL,
             temperature=0.0,  # Zero temp for consistent extraction
-            openai_api_key=OPENAI_API_KEY,
+            timeout=OLLAMA_TIMEOUT,
         )
         logger.info("SymptomExtractionAgent initialized")
 
